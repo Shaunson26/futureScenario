@@ -1,0 +1,28 @@
+Package: futureScenario
+Title: Obtain Future Environmental Predictions Of NSW Locations
+Version: 0.0.0.90001
+Authors@R: 
+    person(given = "Shaun",
+           family = "Nielsen",
+           role = c("aut", "cre"),
+           email = "first.last@example.com",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+    person(given = "Graeme",
+           family = "Clark",
+           role = c("aut", "cre"),
+           email = "first.last@example.com",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: Select NSW addresses within the geocoded GNAF dataset and obtain future environment predictions from this other data source
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Depends: 
+    R (>= 2.10)
+Imports: 
+    shiny,
+    tibble,
+    leaflet,
+    dplyr,
+    base

@@ -1,0 +1,69 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# futureScenario
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of futureScenario is to ...
+
+## to do
+
+1. Obtain and create useable GNAF data - **done**
+2. Incorporate Graemes prediction workflow  
+3. Generate reporting outputs  
+4. Generate shiny apps
+
+## Installation
+
+<!--
+You can install the released version of futureScenario from [CRAN](https://CRAN.R-project.org) with:
+
+``` r
+install.packages("futureScenario")
+```
+-->
+
+And the development version from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("Shaunson26/futureScenario")
+```
+
+```{r}
+library(futureScenario)
+```
+
+## Data
+
+A flatten and minified GNAF address dataset `?gnaf`
+
+```{r}
+head(gnaf)
+```
+
+## Shiny
+
+Shiny apps for exploration and other purposes
+
+```{r, eval = F}
+run_gnaf_leaflet_shiny()
+```
+
+
+
+
