@@ -6,6 +6,12 @@ load_all()
 #install()
 
 # Testing stuff
+gnaf[5000,]
+
+return_address_coords(street_number = 2, street_name = 'IVY STREET', locality = 'DARLINGTON', postcode = '2008')
+return_address_coords(street_number = 2, locality = 'DARLINGTON', postcode = '2008')
+return_address_coords(street_number = 2, locality = 'DARLINGTON', postcode = '2008')
+
 ?gnaf
 head(gnaf)
 
@@ -13,6 +19,10 @@ head(gnaf)
 run_gnaf_leaflet_shiny()
 
 # Recorded steps ----
+
+
+
+use_r('return_address_coords')
 
 use_mit_license()
 
