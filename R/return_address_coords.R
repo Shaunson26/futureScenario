@@ -9,6 +9,7 @@
 #' @param locality locality/suburb
 #' @param postcode postcode. Must be 4 digits
 #'
+#' @export
 return_address_coords <- function(street_number, street_name, locality, postcode){
 
   # Input checking ----

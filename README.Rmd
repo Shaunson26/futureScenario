@@ -50,10 +50,23 @@ library(futureScenario)
 
 ## Data
 
-A flatten and minified GNAF address dataset `?gnaf`
+A flattened and minified GNAF address dataset `?gnaf`
 
 ```{r}
 head(gnaf)
+```
+
+## Functions
+
+`return_address_coords()` is used to query `gnaf`. Currently with exact matches only.
+If any query files are missing, there will be a wildcard used for that those fields
+
+```{r}
+# An exact match
+return_address_coords(street_number = 2, street_name = 'IVY STREET', locality = 'DARLINGTON', postcode = '2008')
+
+# missing street_name returns all street_names matching the rest of the query
+return_address_coords(street_number = 2, locality = 'DARLINGTON', postcode = '2008')
 ```
 
 ## Shiny

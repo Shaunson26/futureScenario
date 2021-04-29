@@ -1,6 +1,6 @@
 Package: futureScenario
 Title: Obtain Future Environmental Predictions Of NSW Locations
-Version: 0.0.0.90001
+Version: 0.0.0.9002
 Authors@R: 
     person(given = "Shaun",
            family = "Nielsen",

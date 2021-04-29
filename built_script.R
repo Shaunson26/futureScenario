@@ -3,7 +3,7 @@ library(devtools)
 # Package stuff
 document()
 load_all()
-#install()
+install()
 
 # Testing stuff
 gnaf[5000,]
