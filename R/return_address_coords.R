@@ -25,17 +25,17 @@ return_address_coords <- function(street_number, street_name, locality, postcode
 
 
   stopifnot(
-    'street_number must be a number' = ifelse(missing(street_number), T, is.numeric(street_number)),
-    'street_name must be a character' = ifelse(missing(street_name), T, is.character(street_name)),
-    'locality must be a character' = ifelse(missing(locality), T, is.character(locality)),
-    'postcode must be a number' =  ifelse(missing(postcode), T, is.numeric(postcode))
+    'street_number must be a number' = ifelse(missing(street_number), TRUE, is.numeric(street_number)),
+    'street_name must be a character' = ifelse(missing(street_name), TRUE, is.character(street_name)),
+    'locality must be a character' = ifelse(missing(locality), TRUE, is.character(locality)),
+    'postcode must be a number' =  ifelse(missing(postcode), TRUE, is.numeric(postcode))
   )
 
   # Function ----
-  missing_street_number = ifelse(missing(street_number), T, F)
-  missing_street_name = ifelse(missing(street_name), T, F)
-  missing_locality = ifelse(missing(locality), T, F)
-  missing_postcode = ifelse(missing(postcode), T, F)
+  missing_street_number = ifelse(missing(street_number), TRUE, FALSE)
+  missing_street_name = ifelse(missing(street_name), TRUE, FALSE)
+  missing_locality = ifelse(missing(locality), TRUE, FALSE)
+  missing_postcode = ifelse(missing(postcode), TRUE, FALSE)
 
   # [to-do] to upper, partial matching
 
@@ -46,17 +46,5 @@ return_address_coords <- function(street_number, street_name, locality, postcode
                 if (missing_postcode) T else POSTCODE == postcode)
 }
 
-#return_address_coords(1, 'A', 'B', 2000)
-# return_address_coords('1', 'A', 'B', 2000)
-# return_address_coords('A1', 'A', 'B', 2000)
-# return_address_coords(1, 'A', 'B', 20000)
-# return_address_coords(1, 'A', 'B', '2000')
-# return_address_coords(1, 'A', 'B', '2000A')
-# return_address_coords(1, 1, 'B', 2)
-# return_address_coords(1, 'A', 1, 2)
-# return_address_coords(1, 'A', 'B', 'C')
-# return_address_coords(1, 'A', 'B')
-# return_address_coords(street_name = 'A', locality = 'B', postcode = 2)
-# return_address_coords(street_number = 1, locality = 'B', postcode = 2)
-# return_address_coords(street_number = 1, street_name = 'A', postcode = 2)
+
 
