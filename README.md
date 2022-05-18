@@ -42,13 +42,15 @@ A flattened and minified GNAF address dataset `?gnaf`
 
 ``` r
 head(gnaf)
-#>   NUMBER_FIRST       STREET_NAME LOCALITY_NAME POSTCODE LONGITUDE  LATITUDE
-#> 1            1 BARANGAROO AVENUE    BARANGAROO     2000  151.2011 -33.86240
-#> 2           15 BARANGAROO AVENUE    BARANGAROO     2000  151.2014 -33.86401
-#> 3           17 BARANGAROO AVENUE    BARANGAROO     2000  151.2014 -33.86401
-#> 4           19 BARANGAROO AVENUE    BARANGAROO     2000  151.2014 -33.86401
-#> 5           21 BARANGAROO AVENUE    BARANGAROO     2000  151.2014 -33.86401
-#> 6           23 BARANGAROO AVENUE    BARANGAROO     2000  151.2014 -33.86401
+#> # A tibble: 6 x 7
+#>   NUMBER_FIRST STREET_NAME      LOCALITY_NAME POSTCODE LONGITUDE LATITUDE MB_2016_CODE
+#>          <dbl> <chr>            <chr>            <dbl>     <dbl>    <dbl>        <dbl>
+#> 1            1 ABERCROMBIE LANE SYDNEY            2000      151.    -33.9  10742401000
+#> 2         5010 ABERCROMBIE LANE SYDNEY            2000      151.    -33.9  10743110000
+#> 3            3 AGAR STEPS       MILLERS POINT     2000      151.    -33.9  11205344000
+#> 4            5 AGAR STEPS       MILLERS POINT     2000      151.    -33.9  11205344000
+#> 5            7 AGAR STEPS       MILLERS POINT     2000      151.    -33.9  11205344000
+#> 6            9 AGAR STEPS       MILLERS POINT     2000      151.    -33.9  11205344000
 ```
 
 ## Functions
@@ -60,24 +62,47 @@ used for that those fields
 ``` r
 # An exact match
 return_address_coords(street_number = 2, street_name = 'IVY STREET', locality = 'DARLINGTON', postcode = '2008')
-#> # A tibble: 1 x 6
-#>   NUMBER_FIRST STREET_NAME LOCALITY_NAME POSTCODE LONGITUDE LATITUDE
-#>          <int> <chr>       <chr>            <int>     <dbl>    <dbl>
-#> 1            2 IVY STREET  DARLINGTON        2008      151.    -33.9
+#> # A tibble: 1 x 7
+#>   NUMBER_FIRST STREET_NAME LOCALITY_NAME POSTCODE LONGITUDE LATITUDE MB_2016_CODE
+#>          <dbl> <chr>       <chr>            <dbl>     <dbl>    <dbl>        <dbl>
+#> 1            2 IVY STREET  DARLINGTON        2008      151.    -33.9  10755400000
 
 # missing street_name returns all street_names matching the rest of the query
 return_address_coords(street_number = 2, locality = 'DARLINGTON', postcode = '2008')
-#> # A tibble: 8 x 6
-#>   NUMBER_FIRST STREET_NAME         LOCALITY_NAME POSTCODE LONGITUDE LATITUDE
-#>          <int> <chr>               <chr>            <int>     <dbl>    <dbl>
-#> 1            2 CALDER ROAD         DARLINGTON        2008      151.    -33.9
-#> 2            2 EDWARD STREET       DARLINGTON        2008      151.    -33.9
-#> 3            2 GOLDEN GROVE STREET DARLINGTON        2008      151.    -33.9
-#> 4            2 IVY LANE            DARLINGTON        2008      151.    -33.9
-#> 5            2 IVY STREET          DARLINGTON        2008      151.    -33.9
-#> 6            2 LANDER STREET       DARLINGTON        2008      151.    -33.9
-#> 7            2 SHEPHERD LANE       DARLINGTON        2008      151.    -33.9
-#> 8            2 THOMAS STREET       DARLINGTON        2008      151.    -33.9
+#> # A tibble: 8 x 7
+#>   NUMBER_FIRST STREET_NAME         LOCALITY_NAME POSTCODE LONGITUDE LATITUDE MB_2016_CODE
+#>          <dbl> <chr>               <chr>            <dbl>     <dbl>    <dbl>        <dbl>
+#> 1            2 CALDER ROAD         DARLINGTON        2008      151.    -33.9  10755730000
+#> 2            2 EDWARD STREET       DARLINGTON        2008      151.    -33.9  10756590000
+#> 3            2 GOLDEN GROVE STREET DARLINGTON        2008      151.    -33.9  11205732600
+#> 4            2 IVY LANE            DARLINGTON        2008      151.    -33.9  10755400000
+#> 5            2 IVY STREET          DARLINGTON        2008      151.    -33.9  10755400000
+#> 6            2 LANDER STREET       DARLINGTON        2008      151.    -33.9  10756580000
+#> 7            2 SHEPHERD LANE       DARLINGTON        2008      151.    -33.9  10751380000
+#> 8            2 THOMAS STREET       DARLINGTON        2008      151.    -33.9  10752920000
+```
+
+## API calls
+
+### Heat vulnerability
+
+Call to NSW data
+
+``` r
+hvi <-
+  return_address_coords(street_number = 2, street_name = 'IVY STREET', locality = 'DARLINGTON', postcode = '2008') %>%
+  join_sa1() %>%
+  dplyr::pull(SA1_MAINCODE_2016) %>%
+  get_heat_vulnerability_index() %>%  # JSON as a list
+  map_heat_vulnerability_index()
+
+hvi %>% 
+  do.call(rbind.data.frame, .)
+#>                               label value   value_text
+#> HVI        Heat vulnerability index     3     moderate
+#> Expos_Indx           Exposure index     2 low-moderate
+#> Sensi_Indx        Sensitivity index     5         high
+#> AdapC_Indx        Adaptive capacity     4 low-moderate
 ```
 
 ## Shiny

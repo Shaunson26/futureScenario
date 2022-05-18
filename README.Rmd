@@ -44,10 +44,16 @@ And the development version from [GitHub](https://github.com/) with:
 devtools::install_github("Shaunson26/futureScenario")
 ```
 
-```{r}
+```{r, eval=F}
 library(futureScenario)
 ```
 
+```{r, include=FALSE}
+library(devtools)
+load_all()
+
+options(width = 250)
+```
 ## Data
 
 A flattened and minified GNAF address dataset `?gnaf`
@@ -67,6 +73,24 @@ return_address_coords(street_number = 2, street_name = 'IVY STREET', locality = 
 
 # missing street_name returns all street_names matching the rest of the query
 return_address_coords(street_number = 2, locality = 'DARLINGTON', postcode = '2008')
+```
+
+## API calls
+
+### Heat vulnerability
+
+Call to NSW data
+
+```{r}
+hvi <-
+  return_address_coords(street_number = 2, street_name = 'IVY STREET', locality = 'DARLINGTON', postcode = '2008') %>%
+  join_sa1() %>%
+  dplyr::pull(SA1_MAINCODE_2016) %>%
+  get_heat_vulnerability_index() %>%  # JSON as a list
+  map_heat_vulnerability_index()
+
+hvi %>% 
+  do.call(rbind.data.frame, .)
 ```
 
 ## Shiny

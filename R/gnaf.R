@@ -12,8 +12,8 @@
 #'
 #' \url{https://data.gov.au/data/dataset/19432f89-dc3a-4ef3-b943-5326ef1dbecc}
 #'
-#' The data was flatten from the original set of data files and only includes
-#' the main street address (Units/apartments are not included)
+#' The data was flattened from the original set of data files and only includes
+#' the main street address (Units/apartments are not included), coordinates and meshblock 2016
 #'
 #' @format A data frame with 2770292 rows and 6 variables:
 #' \describe{
@@ -23,6 +23,7 @@
 #'   \item{POSTCODE}{int, postcode}
 #'   \item{LONGITUDE}{num, longitude of address}
 #'   \item{LATITUDE}{num, latitude of address}
+#'   \item{MB_2016_CODE}{char, meshblock 2016 code}
 #' }
 #' @source \url{https://data.gov.au}
 'gnaf'

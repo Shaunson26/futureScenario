@@ -25,7 +25,10 @@ Imports:
     tibble,
     leaflet,
     dplyr,
-    base
+    base,
+    httr2,
+    reactable,
+    htmltools
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
