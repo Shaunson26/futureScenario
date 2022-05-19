@@ -4,3 +4,4 @@
 ^LICENSE\.md$
 ^built_script.R
 ^dev_area/
+^run_gnaf_leaflet_shiny_small.gif

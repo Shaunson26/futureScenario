@@ -54,6 +54,7 @@ load_all()
 
 options(width = 250)
 ```
+
 ## Data
 
 A flattened and minified GNAF address dataset `?gnaf`
@@ -79,18 +80,32 @@ return_address_coords(street_number = 2, locality = 'DARLINGTON', postcode = '20
 
 ### Heat vulnerability
 
-Call to NSW data
+call to https://datasets.seed.nsw.gov.au/dataset/...
 
 ```{r}
 hvi <-
   return_address_coords(street_number = 2, street_name = 'IVY STREET', locality = 'DARLINGTON', postcode = '2008') %>%
   join_sa1() %>%
   dplyr::pull(SA1_MAINCODE_2016) %>%
-  get_heat_vulnerability_index() %>%  # JSON as a list
+  get_heat_vulnerability_index(sa1 = .) %>%  # JSON as a list
   map_heat_vulnerability_index()
 
 hvi %>% 
   do.call(rbind.data.frame, .)
+```
+
+### Urban vegetation cover
+
+call to https://datasets.seed.nsw.gov.au/dataset/...
+
+```{r}
+uvca <-
+  return_address_coords(street_number = 2, street_name = 'IVY STREET', locality = 'DARLINGTON', postcode = '2008') %>%
+  dplyr::pull(MB_2016_CODE) %>%
+  get_urban_vegetation_cover_all(mb = .) %>%  # JSON as a list
+  map_urban_vegetation_cover_all()
+
+uvca
 ```
 
 ## Shiny
@@ -101,6 +116,6 @@ Shiny apps for exploration and other purposes
 run_gnaf_leaflet_shiny()
 ```
 
-
+![Shiny example gif](run_gnaf_leaflet_shiny_small.gif)
 
 

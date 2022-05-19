@@ -9,10 +9,10 @@ library(htmltools)
 find_address <- function(data, number, street, suburb, postcode) {
   data %>%
     dplyr::filter(
-      POSTCODE == postcode,
+      POSTCODE == as.integer(postcode),
       LOCALITY_NAME == suburb,
       STREET_NAME == street,
-      NUMBER_FIRST == number
+      NUMBER_FIRST == as.integer(number)
     )
 }
 
@@ -131,7 +131,7 @@ ui <- fluidPage(
 
       shiny::wellPanel(
         h3('Obtain data for an address'),
-        p('Units and apartment numbers of disregarded. The field will auto populate after each selection, please wait a few seconds.'),
+        p('Only street number is required, unit and apartment numbers are disregarded.'),
         input_list$number,
         input_list$street,
         input_list$suburb,
@@ -145,9 +145,7 @@ ui <- fluidPage(
       style = 'height: 100%; padding: 0; padding-left: 8px;',
       width = 9,
       id = 'column-main',
-      leafletOutput("address_map", width = "100%", height = "400px"),
-      tableOutput('found_address'),
-      reactableOutput('results')
+      leafletOutput("address_map", width = "100%", height = "400px")
     )
   )
 )
@@ -216,14 +214,12 @@ server <- function(input, output, session) {
 
                     inputs = selection_listeners()
 
-                    shinybusy::show_modal_spinner(text = 'Updating address fields based on selection')
-
                     gnaf %>%
                       filter(
                         if (inputs$number == '')
                           T
                         else
-                          NUMBER_FIRST == inputs$number,
+                          NUMBER_FIRST == as.integer(inputs$number),
                         if (inputs$street == '')
                           T
                         else
@@ -235,7 +231,7 @@ server <- function(input, output, session) {
                         if (inputs$postcode == '')
                           T
                         else
-                          POSTCODE == inputs$postcode
+                          POSTCODE == as.integer(inputs$postcode)
                       )
 
 
@@ -243,10 +239,11 @@ server <- function(input, output, session) {
 
   observeEvent(gnaf_subset(), {
 
+    print('filtering GNAF done')
+
     inputs = selection_listeners()
 
     if (inputs$number == '') {
-      print('inputs number')
       unique_numbers <- unique_input_values(gnaf_subset()$NUMBER_FIRST)
       updateSelectize(session = session,
                       inputId = 'number',
@@ -255,7 +252,6 @@ server <- function(input, output, session) {
     }
 
     if (inputs$street == '') {
-      print('inputs street')
       unique_streets <- unique_input_values(gnaf_subset()$STREET_NAME)
       updateSelectize(session = session,
                       inputId = 'street',
@@ -263,7 +259,6 @@ server <- function(input, output, session) {
     }
 
     if (inputs$suburb == '') {
-      print('inputs suburb')
       unique_suburbs <- unique_input_values(gnaf_subset()$LOCALITY_NAME)
       updateSelectize(session = session,
                       inputId = 'suburb',
@@ -271,14 +266,11 @@ server <- function(input, output, session) {
     }
 
     if (inputs$postcode == '') {
-      print('inputs postcode')
       unique_postcode <- unique_input_values(gnaf_subset()$POSTCODE)
       updateSelectize(session = session,
                       inputId = 'postcode',
                       choices = unique_postcode)
     }
-
-    shinybusy::remove_modal_spinner()
 
   })
 
@@ -304,21 +296,20 @@ server <- function(input, output, session) {
                ignoreInit = TRUE,
                handlerExpr = {
 
-                 insertUI(selector = '#column-main', where = 'beforeEnd',
-                          ui = tableOutput('found_address'))
-                 insertUI(selector = '#column-main', where = 'beforeEnd',
-                          ui = reactableOutput('results'))
-
                  found_address <-
                    gnaf_subset() %>%
                    find_address(number = input$number,
                                 street = input$street,
                                 suburb = input$suburb,
-                                postcode = input$postcode)
+                                postcode = input$postcode) %>%
+                   join_sa1()
 
                  # df output
-                 output$found_address <-
-                   renderTable(found_address, width = '100%')
+                 # insertUI(selector = '#column-main', where = 'beforeEnd',
+                 #          ui = tableOutput('found_address'))
+                 #
+                 # output$found_address <-
+                 #   renderTable(found_address, width = '100%')
 
                  address_label = with(found_address,
                                       paste(NUMBER_FIRST, STREET_NAME,
@@ -334,35 +325,54 @@ server <- function(input, output, session) {
                    ) %>%
                    flyTo(lng =  found_address$LONGITUDE,
                          lat = found_address$LATITUDE,
-                         zoom = 13)
+                         zoom = 14)
 
-                 shinybusy::show_modal_spinner(text = 'Downloading data from API')
+                 shinybusy::show_modal_spinner(text = 'Downloading data from APIs')
+
+                 print('Getting UVI')
 
                  hvi_resp <-
                    found_address %>%
-                   #return_address_coords(street_number = 37, street_name = 'ST PAULS CRESCENT', locality = 'LIVERPOOL', postcode = '2170') %>%
-                   join_sa1() %>%
                    pull(SA1_MAINCODE_2016) %>%
                    get_heat_vulnerability_index() %>%
                    map_heat_vulnerability_index()
 
+                 print('Getting UVCA')
+
+                 uvca_resp <-
+                   found_address %>%
+                   dplyr::pull(MB_2016_CODE) %>%
+                   get_urban_vegetation_cover_all() %>%
+                   map_urban_vegetation_cover_all()
+
                  shinybusy::remove_modal_spinner()
 
-                 output$results <- renderReactable({
+                 insertUI(selector = '#column-main', where = 'beforeEnd',
+                          ui = tags$div(
+                            id = 'hvi-container',
+                            h4('Heat vulnerability index'),
+                            reactableOutput('hvi_results'),
+                            hr()
+                          )
+                 )
+
+                 output$hvi_results <- renderReactable({
 
                    hvi_resp %>%
                      do.call(bind_rows, .) %>%
                      mutate(indicator = paste(value, value_text)) %>%
+                     select(-value) %>%
                      reactable::reactable(
                        columns = list(
-                         value = colDef(
-                           show = FALSE,
-                           maxWidth = 80
+                         label = colDef(
+                           name = 'Index'
                          ),
                          value_text = colDef(
+                           name = 'Index category',
                            maxWidth = 120
                          ),
                          indicator = colDef(
+                           name = 'Index value',
                            cell = function(value) {
 
                              text <- sub('. ', '', value)
@@ -393,8 +403,54 @@ server <- function(input, output, session) {
                        ))
                  })
 
+                 insertUI(selector = '#column-main', where = 'beforeEnd',
+                          ui = tags$div(
+                            id = 'uvca-container',
+                            h4('Urban vegetation cover'),
+                            reactableOutput('uvca_results'),
+                            hr()
+                          )
+                 )
 
+                 output$uvca_results <- renderReactable({
 
+                   uvca_resp %>%
+                     mutate(pct = round(pct, 2)) %>%
+                     reactable::reactable(
+                       columns = list(
+                         attributes = colDef(
+                           name = 'Vegetation type'
+                         ),
+                         pct = colDef(
+                           name = 'Percent cover',
+                           align = 'left',
+                           cell = function(value) {
+
+                             greenColorRamp <-
+                               colorRamp(RColorBrewer::brewer.pal(9, 'Greens'))
+
+                             background_colour <- rgb(greenColorRamp(value/100), maxColorValue=255)
+                             width <- paste0(value, "%")
+
+                             bar <- div(
+                               class = "bar-chart",
+                               style = css(marginRight = "6px",
+                                           `flex-grow` = '1',
+                                           `margin-left` = '6px',
+                                           `height` = '14px'),
+                               div(style = list(height = '100%',
+                                                width = width,
+                                                backgroundColor = background_colour))
+                             )
+
+                             div(style = css(display= 'flex',
+                                             `align-items` = 'center'),
+                                 span(paste(value, '%'),
+                                      style = 'width:4em;text-align:right;'), bar)
+                           }
+                         )
+                       ))
+                 })
                })
 
 
@@ -407,8 +463,9 @@ server <- function(input, output, session) {
       clearMarkers() %>%
       nsw_bounds(flyThere = T)
 
-    removeUI('#found_address')
-    removeUI('#results')
+    #removeUI('#found_address')
+    removeUI('#hvi-container')
+    removeUI('#uvca-container')
 
   })
 

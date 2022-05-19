@@ -7,7 +7,7 @@
 \format{
 A data frame with xx rows and yy variables:
 \describe{
-\item{MB_CODE_2016 }{dbl, meshblock 2016 code}
+\item{MB_CODE_2016 }{chr, meshblock 2016 code}
 \item{SA1_MAINCODE_2016}{chr, SA1 2016 code}
 }
 }
