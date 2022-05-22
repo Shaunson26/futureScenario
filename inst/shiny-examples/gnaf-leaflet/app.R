@@ -131,11 +131,11 @@ ui <- fluidPage(
 
       shiny::wellPanel(
         h3('Obtain data for an address'),
-        p('Only street number is required, unit and apartment numbers are disregarded.'),
-        input_list$number,
-        input_list$street,
-        input_list$suburb,
         input_list$postcode,
+        input_list$suburb,
+        input_list$street,
+        input_list$number,
+        p('Only street number is required, unit and apartment numbers are disregarded.'),
         button_list$search,
         button_list$clear
       )
