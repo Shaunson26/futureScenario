@@ -30,30 +30,7 @@ get_urban_vegetation_cover_all <- function(mb){
     'Only 1 value can in input' = length(mb) == 1,
     'MB code not known' = mb %in% mb2016_to_sa12016$MB_CODE_2016)
 
-  where_query_string <- sprintf("MB_CODE16='%s'", mb)
-
-  url <- service_urls$urban_vegetation_cover_all
-
-  resp <-
-    httr2::request(url) %>%
-    httr2::req_url_query(f='pjson',
-                         returnGeometry='false',
-                         outFields="*",
-                         where=where_query_string) %>%
-    httr2::req_perform()
-
-  if (httr2::resp_status(resp) == 200){
-
-    resp_list <-
-      resp %>%
-      httr2::resp_body_json(check_type = FALSE)
-
-    return(resp_list)
-
-  } else {
-
-    stop(httr2::resp_status_desc(resp))
-
-  }
+  query_api(url = service_urls$urban_vegetation_cover_all,
+            where_query_string = sprintf("MB_CODE16='%s'", mb))
 
 }
