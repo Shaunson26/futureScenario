@@ -170,7 +170,7 @@ server <- function(input, output, session) {
   # Initialize map
   output$address_map <- renderLeaflet({
     leaflet() %>%
-      addProviderTiles(providers$Stamen.TonerLite,
+      addProviderTiles(providers$OpenStreetMap.Mapnik,
                        options = providerTileOptions(noWrap = TRUE)) %>%
       nsw_bounds(flyThere = T)
   })
