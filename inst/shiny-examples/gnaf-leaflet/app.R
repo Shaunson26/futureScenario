@@ -145,7 +145,7 @@ ui <- fluidPage(
       style = 'height: 100%; padding: 0; padding-left: 8px;',
       width = 9,
       id = 'column-main',
-      leafletOutput("address_map", width = "100%", height = "400px")
+      leafletOutput("address_map", width = "100%", height = "300px")
     )
   )
 )
@@ -329,6 +329,14 @@ server <- function(input, output, session) {
 
                  shinybusy::show_modal_spinner(text = 'Downloading data from APIs')
 
+                 print('Getting UHI')
+
+                 uhi_resp <-
+                   found_address %>%
+                   dplyr::pull(MB_2016_CODE) %>%
+                   get_urban_heat_island_value() %>%
+                   map_urban_heat_island_value()
+
                  print('Getting UVI')
 
                  hvi_resp <-
@@ -349,6 +357,68 @@ server <- function(input, output, session) {
 
                  insertUI(selector = '#column-main', where = 'beforeEnd',
                           ui = tags$div(
+                            id = 'uhi-container',
+                            h4('Urban Heat Island'),
+                            reactableOutput('uhi_results'),
+                            hr()
+                          )
+                 )
+
+                 output$uhi_results <- renderReactable({
+
+                   uhi_resp %>%
+                     select(label, value_text, value) %>%
+                     mutate(bar = value) %>%
+                     reactable::reactable(
+                       columns = list(
+                         label = colDef(name = 'Measure'),
+                         value_text = colDef(name = 'Value category', maxWidth = 160),
+                         value = colDef(
+                           name = 'Value',
+                           maxWidth = 80,
+                           align = 'left',
+                           cell = function(value){
+                             if (is.numeric(value)) {
+                               return(paste(round(value, 2), '°C'))
+                             }
+                             value
+                           }
+                         ),
+                         bar = colDef(
+                           name = 'Bar',
+                           align = 'left',
+                           cell = function(value) {
+
+                             redColorRamp <-
+                               colorRamp(RColorBrewer::brewer.pal(9, 'Reds'))
+
+                             if (is.numeric(value)) {
+
+                               value_max = ifelse(value > 9, 9,  value)
+                               background_colour <- rgb(redColorRamp(value_max/9), maxColorValue=255)
+                               width <- paste0(value_max/9 * 100, "%")
+
+                             } else {
+
+                               background_colour <- rgb(redColorRamp(0/9), maxColorValue=255)
+                               width <- paste0(0, "%")
+                               value_final = value
+
+                             }
+
+                             bar <-
+                               div(style=list(width = width,
+                                               backgroundColor = background_colour))
+
+                             div(style='width:100%;height:1em;display:flex;', bar)
+
+                           }
+                         )
+                       ))
+                 })
+
+                 insertUI(selector = '#column-main', where = 'beforeEnd',
+                          ui = tags$div(
                             id = 'hvi-container',
                             h4('Heat vulnerability index'),
                             reactableOutput('hvi_results'),
@@ -359,48 +429,39 @@ server <- function(input, output, session) {
                  output$hvi_results <- renderReactable({
 
                    hvi_resp %>%
-                     do.call(bind_rows, .) %>%
-                     mutate(indicator = paste(value, value_text)) %>%
-                     select(-value) %>%
+                     select(label, value_text, value) %>%
                      reactable::reactable(
                        columns = list(
-                         label = colDef(
-                           name = 'Index'
-                         ),
-                         value_text = colDef(
-                           name = 'Index category',
-                           maxWidth = 120
-                         ),
-                         indicator = colDef(
+                         label = colDef(name = 'Index'),
+                         value_text = colDef(name = 'Index category', maxWidth = 160),
+                         value = colDef(
                            name = 'Index value',
-                           cell = function(value) {
+                           align = 'left',
+                           cell = function(value, i) {
 
-                             text <- sub('. ', '', value)
-                             value <- as.numeric(sub(' .*', '', value))
-
-                             values <- c('low', 'low-moderate', 'moderate', 'moderate-high', 'high')
                              colours <- rev(c('#d7191c','#fdae61','#ffffbf','#abd9e9','#2c7bb6'))
 
                              width <- paste0(value * 100 / 5, "%")
-                             background_colour <- colours[which(values %in% text)]
 
-                             bar <- div(
-                               class = "bar-chart",
-                               style = css(marginRight = "6px",
-                                           `flex-grow` = '1',
-                                           `margin-left` = '6px',
-                                           `height` = '14px'),
-                               div(style = list(height = '100%',
-                                                width = width,
-                                                backgroundColor = background_colour))
-                             )
+                             background_colour <-
+                               ifelse(grepl('Adaptive', hvi_resp$label[i]),
+                                      rev(colours)[value],
+                                      colours[value])
 
-                             div(style = css(display= 'flex',
-                                             `align-items` = 'center'),
-                                 span(value), bar)
+                             value_span <-
+                               span(hvi_resp$value[i],
+                                    style = 'margin-right: 4px;')
+
+                             bar <-
+                               div(style= list(width = width,
+                                               backgroundColor = background_colour))
+
+                             div(style='width:100%;display:flex;',
+                                 value_span, bar)
                            }
                          )
-                       ))
+                       )
+                     )
                  })
 
                  insertUI(selector = '#column-main', where = 'beforeEnd',
@@ -415,13 +476,11 @@ server <- function(input, output, session) {
                  output$uvca_results <- renderReactable({
 
                    uvca_resp %>%
-                     mutate(pct = round(pct, 2)) %>%
                      reactable::reactable(
                        columns = list(
-                         attributes = colDef(
-                           name = 'Vegetation type'
-                         ),
-                         pct = colDef(
+                         label = colDef(name = 'Vegetation type'),
+                         value_text = colDef(name = 'Value category', maxWidth = 160),
+                         value = colDef(
                            name = 'Percent cover',
                            align = 'left',
                            cell = function(value) {
@@ -429,28 +488,40 @@ server <- function(input, output, session) {
                              greenColorRamp <-
                                colorRamp(RColorBrewer::brewer.pal(9, 'Greens'))
 
-                             background_colour <- rgb(greenColorRamp(value/100), maxColorValue=255)
-                             width <- paste0(value, "%")
+                             if (is.numeric(value)) {
 
-                             bar <- div(
-                               class = "bar-chart",
-                               style = css(marginRight = "6px",
-                                           `flex-grow` = '1',
-                                           `margin-left` = '6px',
-                                           `height` = '14px'),
-                               div(style = list(height = '100%',
-                                                width = width,
-                                                backgroundColor = background_colour))
-                             )
+                               background_colour <- rgb(greenColorRamp(value/100), maxColorValue=255)
 
-                             div(style = css(display= 'flex',
-                                             `align-items` = 'center'),
-                                 span(paste(value, '%'),
-                                      style = 'width:4em;text-align:right;'), bar)
+                               width <- paste0(value, "%")
+                               value_final = paste(round(value, 2), '%')
+
+                             } else {
+
+                               background_colour <- rgb(greenColorRamp(0/100), maxColorValue=255)
+
+                               width <- paste0(0, "%")
+                               value_final = value
+
+                             }
+
+                             value_span <-
+                               span(value_final,
+                                    style = 'width:4em;text-align:right;margin-right: 4px;')
+
+                             bar <-
+                               div(style= list(width = width,
+                                               backgroundColor = background_colour))
+
+                             div(style='width:100%;display:flex;',
+                                 value_span, bar)
+
+
                            }
                          )
                        ))
                  })
+
+
                })
 
 
@@ -464,6 +535,7 @@ server <- function(input, output, session) {
       nsw_bounds(flyThere = T)
 
     #removeUI('#found_address')
+    removeUI('#uhi-container')
     removeUI('#hvi-container')
     removeUI('#uvca-container')
 
