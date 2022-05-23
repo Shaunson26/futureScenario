@@ -439,7 +439,7 @@ server <- function(input, output, session) {
                            align = 'left',
                            cell = function(value, i) {
 
-                             colours <- rev(c('#d7191c','#fdae61','#ffffbf','#abd9e9','#2c7bb6'))
+                             colours <- rev(c('#d7191c','#fdae61','#ffffbf','#abd9e9','#2c7bb6')) # problem is that high Adaptive capacit is good, but here is coloured as red=bad
 
                              width <- paste0(value * 100 / 5, "%")
 

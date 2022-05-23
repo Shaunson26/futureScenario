@@ -1,3 +1,4 @@
+#' @export
 map_urban_heat_island_value <- function(x){
 
   attributes_labels <-
