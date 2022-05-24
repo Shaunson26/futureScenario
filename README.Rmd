@@ -1,5 +1,7 @@
 ---
 output: github_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -77,6 +79,132 @@ return_address_coords(street_number = 2, locality = 'DARLINGTON', postcode = '20
 ```
 
 ## API calls
+
+### data-cbr.csiro.au
+
+In development still ...  
+
+Huge raster data are available using NetcdfSubset REST API. Datasets are split by:
+
+- variable  
+- year range  
+- model  
+- greenhouse gas scenario  
+
+Within each dataset, data selection parameters include:  
+
+- variable
+- lat/lon  
+- date start/end  
+- date step  
+
+The object `csiro_catalog` is a named list to help select the dataset for URL building
+
+```{r}
+csiro_catalog$variable
+csiro_catalog$year_range
+csiro_catalog$model
+csiro_catalog$rcp
+```
+
+We can build the queries using `create_dataset_url()` which uses `httr2`
+
+```{r}
+create_dataset_url(variable = csiro_catalog$variable$`Rainfall_(Precipitation)`,
+                   model = csiro_catalog$model$`NorESM1-M`,
+                   rcp = csiro_catalog$rcp$rcp45,
+                   year_range = csiro_catalog$year_range$`2016-2045`)
+```
+
+This function is used within `download_netcdf_subset()` along with dataset parameters to
+download a netcdf4 file to a temporary location (returned by the function, 
+`{randomChars}_{variable}_{model}_{rcp}_{date_range}.nc`). Two download
+methods exist - using `download.file()` or `writeBin(body)` from `httr2` methods. The former
+is quicker, but seems to fail often. `httr2` methods are more polite? Or the server is under load?
+
+```{r, eval = F}
+# TODO - still has bugs
+
+# Get lat/lon
+addr <-
+  return_address_coords(street_number = 2, street_name = 'IVY STREET', locality = 'DARLINGTON', postcode = '2008')
+
+# download file
+downloaded_file_path <-
+  download_netcdf_subset(variable = csiro_catalog$variable$`Rainfall_(Precipitation)`,
+                         model = csiro_catalog$model$`NorESM1-M`,
+                         rcp = csiro_catalog$rcp$rcp85,
+                         year_range = csiro_catalog$year_range$`2016-2045`,
+                         lat = addr$LATITUDE, lon = addr$LONGITUDE,
+                         date_start = '2016-01-01', date_end = '2030-01-01',
+                         date_step = 30,
+                         method = 'httr2')
+
+raster_data <- stars::read_ncdf(downloaded_file_path, var = 'still_need_to_capture_this')
+
+raster_data %>%
+  as_tibble() %>% 
+  do_things()
+```
+
+eg
+
+```{r, eval = F}
+addr <-
+  return_address_coords(street_number = 2, street_name = 'IVY STREET', locality = 'DARLINGTON', postcode = '2008')
+
+tmp_fun <- function(x, method){
+  download_netcdf_subset(variable = x,
+                         model = csiro_catalog$model$`NorESM1-M`,
+                         rcp = csiro_catalog$rcp$rcp85,
+                         year_range = csiro_catalog$year_range$`2016-2045`,
+                         lat = addr$LATITUDE, lon = addr$LONGITUDE,
+                         date_start = '2016-01-01', date_end = '2045-12-31',
+                         date_step = 30, method = method)
+}
+
+rsds <- tmp_fun(csiro_catalog$variable$Solar_Radiation, method = 'httr2')
+hurs <- tmp_fun(csiro_catalog$variable$Relative_Humidity, method = 'httr2')
+pr <- tmp_fun(csiro_catalog$variable$`Rainfall_(Precipitation)`, method = 'httr2')
+tasmin <- tmp_fun(csiro_catalog$variable$Minimum_Temperature, method = 'httr2')
+tas <- tmp_fun(csiro_catalog$variable$Mean_Temperature, method = 'httr2')
+tasmax <- tmp_fun(csiro_catalog$variable$Maximum_Temperature, method = 'httr2')
+wvap <- tmp_fun(csiro_catalog$variable$Evaporation, method = 'httr2')
+
+library(stars)
+library(dplyr)
+library(ggplot2)
+
+stars_list <-
+  list(hurs, pr, tasmin, tas, tasmax, wvap) %>%
+  lapply(., function(x){
+    # extract variable from filename
+    var = strsplit(basename(x), split = '_')[[1]][2]
+    # import
+    stars::read_ncdf(x, var = var)
+  })
+
+# one dataset has weird time class
+class_PCICt <- function(x){
+  class(x)[1] == 'PCICt'
+}
+
+purrr::map_df(zz, function(x){
+  x %>%
+    as_tibble() %>%
+    select(everything(), value = 4) %>%
+    mutate(across(where(class_PCICt), as.character),
+           time = as.Date(time),
+           value = as.numeric(value),
+           var = names(x)) %>%
+    # may get multiple grids for a give lat/lon so average to 1 value
+    group_by(time) %>%
+    summarise(value = mean(value)) %>%
+    ungroup()
+})
+```
+
+
 
 ### Heat vulnerability
 

@@ -9,27 +9,46 @@
 #format(Sys.time(), '%FT%TZ')
 format(Sys.Date(), '%FT%TZ')
 
-list(
-  base = 'https://data-cbr.csiro.au/',
-  thredds = 'thredds/ncss/catch_all/oa-aus5km/Climate_Change_in_Australia_User_Data/Application_Ready_Data_Gridded_Daily',
-  variable = 'Mean_Temperature',
-  year_range = '2016-2045',
-  model_dataset = 'tas_aus_NorESM1-M_rcp45_r1i1p1_CSIRO-MnCh-wrt-1986-2005-Scl_v1_day_2016-2045.nc', #?
-  query = list(var='tas',
-               north=-27,
-               west=140,
-               east=156.2500,
-               south=-40,
-               disableProjSubset='on',
-               horizStride=1,
-               time_start='2016-01-01T00%3A00%3A00Z',
-               time_end='2016-02-01T00%3A00%3A00Z',
-               timeStride=1,
-               accept='netcdf')
-)
+csiro <-
+  list(
+    base = 'https://data-cbr.csiro.au/',
+    thredds = 'thredds/ncss/catch_all/oa-aus5km/Climate_Change_in_Australia_User_Data/Application_Ready_Data_Gridded_Daily',
+    variable = 'Mean_Temperature',
+    year_range = '2016-2045',
+    model_dataset = 'tas_aus_NorESM1-M_rcp45_r1i1p1_CSIRO-MnCh-wrt-1986-2005-Scl_v1_day_2016-2045.nc', #?
+    query = list(var='tas',
+                 north=-33.830,#-27,
+                 west=151.070, #140,
+                 east=151.080, #156.2500,
+                 south=-33.8320,#-40,
+                 disableProjSubset='on',
+                 horizStride=1,
+                 time_start='2016-01-01T00:00:00Z',
+                 time_end='2016-01-02T00:00:00Z',
+                 timeStride=1,
+                 accept='netcdf')
+  )
+
+library(httr2)
+
+return_address_coords(street_number = 6, street_name = 'AMALFI DRIVE', postcode = 2127) %>%
+  dplyr::select(LONGITUDE, LATITUDE) %>%
+  as.data.frame()
+
+resp <-
+  request(csiro$base) %>%
+  req_url_path_append(csiro$thredds) %>%
+  req_url_path_append(csiro$variable) %>%
+  req_url_path_append(csiro$year_range) %>%
+  req_url_path_append(csiro$model_dataset) %>%
+  req_url_query(!!!csiro$query) %>%
+  req_perform()
+
+
+
+
 
 # a test file from netcdf subset web interface
-library(sf)
 library(stars)
 library(dplyr)
 library(ggplot2)
@@ -67,3 +86,12 @@ aa %>%
        subtitle = '6 AMALFI DRIVE WENTWORTH POINT 2127',
        y = 'Mean temperature (C)',
        x = 'Date')
+
+##
+test_file <- "C:/Users/60141508/Downloads/2016-2045_tas_aus_NorESM1-M_rcp85_r1i1p1_CSIRO-MnCh-wrt-1986-2005-Scl_v1_day_2016-2045 (2).nc4"
+
+aa <- read_ncdf(test_file, var = 'tas')
+
+aa %>%
+  as_tibble()
+
