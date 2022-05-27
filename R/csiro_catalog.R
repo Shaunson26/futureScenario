@@ -10,10 +10,10 @@ csiro_catalog <-
       `Evaporation` =  "Evaporation"
     ),
     year_range = list(
-      `2075-2104` = '2075-2104',
-      `2056-2085` = '2056-2085',
+      `2016-2045` = '2016-2045',
       `2036-2066` = '2036-2066',
-      `2016-2045` = '2016-2045'
+      `2056-2085` = '2056-2085',
+      `2075-2104` = '2075-2104'
     ),
     model = list(
       `NorESM1-M` =  "NorESM1-M",
@@ -26,8 +26,8 @@ csiro_catalog <-
       `ACCESS1-0` =  "ACCESS1-0"
     ),
     rcp = list(
-      `rcp85` =  "rcp85",
-      `rcp45` =  "rcp45"
+      `rcp45` =  "rcp45",
+      `rcp85` =  "rcp85"
     ),
     filename = '{variable}_aus_{model}_{rcp}_r1i1p1_CSIRO-{something}-wrt-1986-2005-Scl_v1_day_{year_range}.nc'
   )

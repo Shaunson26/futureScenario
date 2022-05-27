@@ -375,8 +375,8 @@ server <- function(input, output, session) {
                          value_text = colDef(name = 'Value category', maxWidth = 160),
                          value = colDef(
                            name = 'Value',
-                           maxWidth = 80,
-                           align = 'left',
+                           maxWidth = 110,
+                           align = 'right',
                            cell = function(value){
                              if (is.numeric(value)) {
                                return(paste(round(value, 2), '°C'))
@@ -385,7 +385,7 @@ server <- function(input, output, session) {
                            }
                          ),
                          bar = colDef(
-                           name = 'Bar',
+                           name = '',
                            align = 'left',
                            cell = function(value) {
 
@@ -402,13 +402,12 @@ server <- function(input, output, session) {
 
                                background_colour <- rgb(redColorRamp(0/9), maxColorValue=255)
                                width <- paste0(0, "%")
-                               value_final = value
 
                              }
 
                              bar <-
                                div(style=list(width = width,
-                                               backgroundColor = background_colour))
+                                              backgroundColor = background_colour))
 
                              div(style='width:100%;height:1em;display:flex;', bar)
 
@@ -430,12 +429,17 @@ server <- function(input, output, session) {
 
                    hvi_resp %>%
                      select(label, value_text, value) %>%
+                     mutate(bar = value) %>%
                      reactable::reactable(
                        columns = list(
                          label = colDef(name = 'Index'),
                          value_text = colDef(name = 'Index category', maxWidth = 160),
                          value = colDef(
-                           name = 'Index value',
+                           name = 'Value',
+                           maxWidth = 110,
+                           align = 'right'),
+                         bar = colDef(
+                           name = '',
                            align = 'left',
                            cell = function(value, i) {
 
@@ -448,16 +452,11 @@ server <- function(input, output, session) {
                                       rev(colours)[value],
                                       colours[value])
 
-                             value_span <-
-                               span(hvi_resp$value[i],
-                                    style = 'margin-right: 4px;')
-
                              bar <-
                                div(style= list(width = width,
                                                backgroundColor = background_colour))
 
-                             div(style='width:100%;display:flex;',
-                                 value_span, bar)
+                             div(style='width:100%;height:1em;display:flex;', bar)
                            }
                          )
                        )
@@ -476,12 +475,25 @@ server <- function(input, output, session) {
                  output$uvca_results <- renderReactable({
 
                    uvca_resp %>%
+                     select(label, value_text, value) %>%
+                     mutate(bar = value) %>%
                      reactable::reactable(
                        columns = list(
                          label = colDef(name = 'Vegetation type'),
                          value_text = colDef(name = 'Value category', maxWidth = 160),
                          value = colDef(
                            name = 'Percent cover',
+                           maxWidth = 110,
+                           align = 'right',
+                           cell = function(value){
+                             if (is.numeric(value)) {
+                               return(paste(round(value, 2), '%'))
+                             }
+                             value
+                           }
+                         ),
+                         bar = colDef(
+                           name = '',
                            align = 'left',
                            cell = function(value) {
 
@@ -491,29 +503,20 @@ server <- function(input, output, session) {
                              if (is.numeric(value)) {
 
                                background_colour <- rgb(greenColorRamp(value/100), maxColorValue=255)
-
                                width <- paste0(value, "%")
-                               value_final = paste(round(value, 2), '%')
 
                              } else {
 
                                background_colour <- rgb(greenColorRamp(0/100), maxColorValue=255)
-
                                width <- paste0(0, "%")
-                               value_final = value
 
                              }
 
-                             value_span <-
-                               span(value_final,
-                                    style = 'width:4em;text-align:right;margin-right: 4px;')
-
                              bar <-
-                               div(style= list(width = width,
-                                               backgroundColor = background_colour))
+                               div(style=list(width = width,
+                                              backgroundColor = background_colour))
 
-                             div(style='width:100%;display:flex;',
-                                 value_span, bar)
+                             div(style='width:100%;height:1em;display:flex;', bar)
 
 
                            }
