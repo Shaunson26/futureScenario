@@ -12,9 +12,11 @@ The goal of futureScenario is to …
 
 1.  Obtain and create useable GNAF data - **done**, [see
     vignettes](vignettes/)
-2.  Obtain data
-3.  API calls datasets.seed.nsw.gov.au, data-cbr.csiro.au, …
-4.  Wrangle and save data
+    -   revisit this, some addresses are missing
+    -   lat/lon as integer to shrink file size
+2.  API calls datasets.seed.nsw.gov.au, data-cbr.csiro.au, …
+3.  Obtain and aggregate data
+4.  Create plumber API
 5.  Generate reporting outputs  
 6.  Generate shiny apps
 
@@ -205,13 +207,16 @@ create_dataset_url(variable = csiro_catalog$variable$`Rainfall_(Precipitation)`,
 #> Body: empty
 ```
 
-This function is used within `download_netcdf_subset()` along with
-dataset parameters to download a netcdf4 file to a temporary location
-(the path is returned by the function,
-`{randomChars}_{variable}_{model}_{rcp}_{date_range}.nc`). Two download
-methods exist - using `download.file()` or `writeBin(body)` from
-`httr2`. The former is quicker, but seems to fail often. `httr2` methods
-are more polite? Or the CSIRO server is under load when running these?
+This function is used within `download_netcdf_subset()` along with API
+query parameters to download a dataset netcdf4 file to a temporary
+location(the path is returned by the function,
+`{randomChars}_{variable}_{model}_{rcp}_{date_range}.nc`). Of note is
+the coordinates requested: either `lat`/`lon` or a bounding box `bbox`
+can be used. A NSW bounding box `nsw_bbox` is shipped with the package.
+Also two download methods exist - using `download.file()` or
+`writeBin(body)` from `httr2`. The former is quicker, but seems to fail
+often. `httr2` methods are more polite? Or the CSIRO server is under
+load when running these?
 
 ``` r
 # Get lat/lon
@@ -225,6 +230,7 @@ downloaded_file_path <-
                          rcp = csiro_catalog$rcp$rcp85,
                          year_range = csiro_catalog$year_range$`2016-2045`,
                          lat = addr$LATITUDE, lon = addr$LONGITUDE,
+                         #bbox = nsw_bbox,
                          date_start = '2016-01-01', date_end = '2016-01-03',
                          date_step = 2,
                          method = 'httr2')
@@ -364,4 +370,4 @@ Shiny apps for exploration and other purposes
 run_gnaf_leaflet_shiny()
 ```
 
-![Shiny example gif](run_gnaf_leaflet_shiny_small.gif)
+![Shiny example gif](github-files/run_gnaf_leaflet_shiny_small.gif)

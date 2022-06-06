@@ -25,11 +25,13 @@ The goal of futureScenario is to ...
 ## to do
 
 1. Obtain and create useable GNAF data - **done**, [see vignettes](vignettes/)
-2. Obtain data
-1. API calls datasets.seed.nsw.gov.au, data-cbr.csiro.au, ...
-2. Wrangle and save data
-3. Generate reporting outputs  
-4. Generate shiny apps
+    - revisit this, some addresses are missing
+    - lat/lon as integer to shrink file size
+2. API calls datasets.seed.nsw.gov.au, data-cbr.csiro.au, ...
+3. Obtain and aggregate data
+4. Create plumber API
+5. Generate reporting outputs  
+6. Generate shiny apps
 
 ## Installation
 
@@ -278,6 +280,6 @@ Shiny apps for exploration and other purposes
 run_gnaf_leaflet_shiny()
 ```
 
-![Shiny example gif](run_gnaf_leaflet_shiny_small.gif)
+![Shiny example gif](github-files/run_gnaf_leaflet_shiny_small.gif)
 
 
