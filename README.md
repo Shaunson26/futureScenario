@@ -295,8 +295,6 @@ hvi %>%
 #> 3                                       moderate                             low-moderate                                high                                low-moderate
 ```
 
-<<<<<<< HEAD
-=======
 ### Urban vegetation cover
 
 call to <https://datasets.seed.nsw.gov.au/dataset/>…
@@ -320,7 +318,6 @@ uvca
 #> 6 Percent tall trees (>15 m)     Less than 10%  5.30
 ```
 
->>>>>>> 8b3d485be6084778047efed70c1ed175fd4d249b
 ## Shiny
 
 Shiny apps for exploration and other purposes
