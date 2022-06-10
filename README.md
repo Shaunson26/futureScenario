@@ -10,10 +10,15 @@ The goal of futureScenario is to …
 
 ## to do
 
-1.  Obtain and create useable GNAF data - **done**
-2.  Incorporate Graemes prediction workflow  
-3.  Generate reporting outputs  
-4.  Generate shiny apps
+1.  Obtain and create useable GNAF data - **done**, [see
+    vignettes](vignettes/)
+    -   revisit this, some addresses are missing
+    -   lat/lon as integer to shrink file size
+2.  API calls datasets.seed.nsw.gov.au, data-cbr.csiro.au, …
+3.  Obtain and aggregate data
+4.  Create plumber API
+5.  Generate reporting outputs  
+6.  Generate shiny apps
 
 ## Installation
 
@@ -38,7 +43,8 @@ library(futureScenario)
 
 ## Data
 
-A flattened and minified GNAF address dataset `?gnaf`
+A flattened and minified GNAF address dataset with meshblock 2016
+boundary `?gnaf`
 
 ``` r
 head(gnaf)
@@ -86,7 +92,7 @@ return_address_coords(street_number = 2, locality = 'DARLINGTON', postcode = '20
 
 ### data-cbr.csiro.au
 
-In development still …
+<https://www.climatechangeinaustralia.gov.au/en/obtain-data/download-datasets/>
 
 Huge raster data are available using NetcdfSubset REST API. Datasets are
 split by:
@@ -94,7 +100,7 @@ split by:
 -   variable  
 -   year range  
 -   model  
--   greenhouse gas scenario
+-   greenhouse gas scenario (representative concentration pathways, RCP)
 
 Within each dataset, data selection parameters include:
 
@@ -103,8 +109,8 @@ Within each dataset, data selection parameters include:
 -   date start/end  
 -   date step
 
-The object `csiro_catalog` is a named list to help select the dataset
-for URL building
+The object `csiro_catalog (R/csiro_catalog.R)` is a named list to help
+select the dataset for URL building
 
 ``` r
 csiro_catalog$variable
@@ -128,18 +134,24 @@ csiro_catalog$variable
 #> 
 #> $Evaporation
 #> [1] "Evaporation"
+```
+
+``` r
 csiro_catalog$year_range
-#> $`2075-2104`
-#> [1] "2075-2104"
-#> 
-#> $`2056-2085`
-#> [1] "2056-2085"
+#> $`2016-2045`
+#> [1] "2016-2045"
 #> 
 #> $`2036-2066`
 #> [1] "2036-2066"
 #> 
-#> $`2016-2045`
-#> [1] "2016-2045"
+#> $`2056-2085`
+#> [1] "2056-2085"
+#> 
+#> $`2075-2104`
+#> [1] "2075-2104"
+```
+
+``` r
 csiro_catalog$model
 #> $`NorESM1-M`
 #> [1] "NorESM1-M"
@@ -164,15 +176,25 @@ csiro_catalog$model
 #> 
 #> $`ACCESS1-0`
 #> [1] "ACCESS1-0"
-csiro_catalog$rcp
-#> $rcp85
-#> [1] "rcp85"
-#> 
-#> $rcp45
-#> [1] "rcp45"
 ```
 
-We can build the queries using `create_dataset_url()` which uses `httr2`
+``` r
+csiro_catalog$rcp
+#> $rcp45
+#> [1] "rcp45"
+#> 
+#> $rcp85
+#> [1] "rcp85"
+```
+
+``` r
+csiro_catalog$filename
+#> [1] "{variable}_aus_{model}_{rcp}_r1i1p1_CSIRO-{something}-wrt-1986-2005-Scl_v1_day_{year_range}.nc"
+```
+
+We can build the queries using `create_dataset_url()` which usesv
+`csiro_catalog`, some hardcoded URLs (wihtin the function) and the
+package `httr2`.
 
 ``` r
 create_dataset_url(variable = csiro_catalog$variable$`Rainfall_(Precipitation)`,
@@ -185,17 +207,18 @@ create_dataset_url(variable = csiro_catalog$variable$`Rainfall_(Precipitation)`,
 #> Body: empty
 ```
 
-This function is used within `download_netcdf_subset()` along with
-dataset parameters to download a netcdf4 file to a temporary location
-(returned by the function,
-`{randomChars}_{variable}_{model}_{rcp}_{date_range}.nc`). Two download
-methods exist - using `download.file()` or `writeBin(body)` from `httr2`
-methods. The former is quicker, but seems to fail often. `httr2` methods
-are more polite? Or the server is under load?
+This function is used within `download_netcdf_subset()` along with API
+query parameters to download a dataset netcdf4 file to a temporary
+location(the path is returned by the function,
+`{randomChars}_{variable}_{model}_{rcp}_{date_range}.nc`). Of note is
+the coordinates requested: either `lat`/`lon` or a bounding box `bbox`
+can be used. A NSW bounding box `nsw_bbox` is shipped with the package.
+Also two download methods exist - using `download.file()` or
+`writeBin(body)` from `httr2`. The former is quicker, but seems to fail
+often. `httr2` methods are more polite? Or the CSIRO server is under
+load when running these?
 
 ``` r
-# TODO - still has bugs
-
 # Get lat/lon
 addr <-
   return_address_coords(street_number = 2, street_name = 'IVY STREET', locality = 'DARLINGTON', postcode = '2008')
@@ -207,40 +230,61 @@ downloaded_file_path <-
                          rcp = csiro_catalog$rcp$rcp85,
                          year_range = csiro_catalog$year_range$`2016-2045`,
                          lat = addr$LATITUDE, lon = addr$LONGITUDE,
-                         date_start = '2016-01-01', date_end = '2030-01-01',
-                         date_step = 30,
+                         #bbox = nsw_bbox,
+                         date_start = '2016-01-01', date_end = '2016-01-03',
+                         date_step = 2,
                          method = 'httr2')
 
-raster_data <- stars::read_ncdf(downloaded_file_path, var = 'still_need_to_capture_this')
+raster_data <- stars::read_ncdf(downloaded_file_path, var = get_var_from_path(downloaded_file_path))
 
-raster_data %>%
-  as_tibble() %>% 
-  do_things()
+raster_data
+
+raster_data %>% 
+  tibble::as_tibble()
 ```
 
-eg
+#### Example bulk download
+
+Create a function with set parameters for model, rcp, years, dates and
+vary the variable parameter.
 
 ``` r
-addr <-
-  return_address_coords(street_number = 2, street_name = 'IVY STREET', locality = 'DARLINGTON', postcode = '2008')
-
-tmp_fun <- function(x, method){
+bulk_download <- function(x, address_df){
   download_netcdf_subset(variable = x,
                          model = csiro_catalog$model$`NorESM1-M`,
                          rcp = csiro_catalog$rcp$rcp85,
                          year_range = csiro_catalog$year_range$`2016-2045`,
-                         lat = addr$LATITUDE, lon = addr$LONGITUDE,
+                         lat = address_df$LATITUDE, lon = address_df$LONGITUDE,
                          date_start = '2016-01-01', date_end = '2045-12-31',
-                         date_step = 30, method = method)
+                         date_step = 365, method = 'httr2')
 }
 
-rsds <- tmp_fun(csiro_catalog$variable$Solar_Radiation, method = 'httr2')
-hurs <- tmp_fun(csiro_catalog$variable$Relative_Humidity, method = 'httr2')
-pr <- tmp_fun(csiro_catalog$variable$`Rainfall_(Precipitation)`, method = 'httr2')
-tasmin <- tmp_fun(csiro_catalog$variable$Minimum_Temperature, method = 'httr2')
-tas <- tmp_fun(csiro_catalog$variable$Mean_Temperature, method = 'httr2')
-tasmax <- tmp_fun(csiro_catalog$variable$Maximum_Temperature, method = 'httr2')
-wvap <- tmp_fun(csiro_catalog$variable$Evaporation, method = 'httr2')
+address <-
+  return_address_coords(locality = 'PENRITH') %>% 
+  dplyr::slice(sample(dplyr::n(), 1))
+
+# Download separately in case of connection errors
+rsds <- 
+  bulk_download(csiro_catalog$variable$Solar_Radiation, 
+                address_df = address)
+hurs <- 
+  bulk_download(csiro_catalog$variable$Relative_Humidity, 
+                address_df = address)
+pr <- 
+  bulk_download(csiro_catalog$variable$`Rainfall_(Precipitation)`, 
+                address_df = address)
+tasmin <- 
+  bulk_download(csiro_catalog$variable$Minimum_Temperature, 
+                address_df = address)
+tas <- 
+  bulk_download(csiro_catalog$variable$Mean_Temperature, 
+                address_df = address)
+tasmax <- 
+  bulk_download(csiro_catalog$variable$Maximum_Temperature, 
+                address_df = address)
+wvap <- 
+  bulk_download(csiro_catalog$variable$Evaporation, 
+                address_df = address)
 
 library(stars)
 library(dplyr)
@@ -325,3 +369,8 @@ Shiny apps for exploration and other purposes
 ``` r
 run_gnaf_leaflet_shiny()
 ```
+<<<<<<< HEAD
+=======
+
+![Shiny example gif](github-files/run_gnaf_leaflet_shiny_small.gif)
+>>>>>>> 633e249dbd5a9b708bc6ced1af7efda59705529b

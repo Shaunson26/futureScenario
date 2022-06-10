@@ -2,6 +2,7 @@
 #'
 #' @param lat, number, latitude
 #' @param lon number, longitude
+#' @param bbox number, vector of length 4: left,bottom,right,top | min Longitude , min Latitude , max Longitude , max Latitude
 #' @param date_start date
 #' @param date_end date
 #' @param date_step number, days between date_start and date_end to download
@@ -10,8 +11,20 @@
 #' @return character, path to temporary file that is downloaded
 #'
 #' @export
-download_netcdf_subset <- function(variable, year_range, model, rcp, lat, lon, date_start, date_end, date_step = 1, method = 'download.file'){
+download_netcdf_subset <- function(variable, year_range, model, rcp, bbox, lat, lon, date_start, date_end, date_step = 1, method = 'download.file'){
 
+  # check inputs
+  if (!missing(bbox) & any(!missing(lat), !missing(lon))){
+    stop('only one of bbox or lat/lon can be given')
+  }
+
+  if (!missing(bbox)){
+    if (length(bbox) != 4) {
+      stop('bbox should be a number vector of length 4: left,bottom,right,top | min Longitude , min Latitude , max Longitude , max Latitude')
+    }
+  }
+
+  # do stuff
   date_start <- format(as.Date(date_start), '%FT%TZ')
   date_end <- format(as.Date(date_end), '%FT%TZ')
 
@@ -23,17 +36,37 @@ download_netcdf_subset <- function(variable, year_range, model, rcp, lat, lon, d
 
   var = sub('_.*', '', basename(request_obj$url))
 
-  query = list(var=var,
-               north=lat + 0.0001,
-               west=lon - 0.0001,
-               east=lon + 0.0001,
-               south=lat - 0.0001,
-               #disableProjSubset='on',
-               horizStride=1,
-               time_start=date_start,
-               time_end=date_end,
-               timeStride=date_step,
-               accept='netcdf4')
+
+
+  if (!missing(bbox)){
+    coords <-
+      list(
+        north = bbox[4],
+        west = bbox[1],
+        east = bbox[3],
+        south = bbox[2]
+      )
+  } else {
+    coords <-
+      list(
+        north = lat + 0.0001,
+        west = lon - 0.0001,
+        east = lon + 0.0001,
+        south = lat - 0.0001
+      )
+  }
+
+  query <-
+    c(
+      list(var=var,
+           #disableProjSubset='on',
+           horizStride=1,
+           time_start=date_start,
+           time_end=date_end,
+           timeStride=date_step,
+           accept='netcdf4'),
+      coords
+    )
 
   request_obj <-
     request_obj %>%
@@ -77,4 +110,13 @@ download_netcdf_subset <- function(variable, year_range, model, rcp, lat, lon, d
 
   }
 
+  if (method == 'test') {
+
+    message(request_obj$url)
+
+  } else {
+    stop("method error")
+  }
+
 }
+
